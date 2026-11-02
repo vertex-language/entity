@@ -213,7 +213,7 @@ public func Window(title: string, options: Options = Options(), schedule s: sche
 /// of `dt`, as fast as it can, calling `each` after every frame (false
 /// stops early). Answers how long it took, in seconds of real time.
 @discardableResult
-public func Headless(_ s: schedule.Schedule, seconds: float64, dt: float32 = 1.0 / 60, each: (float64) -> bool = { _ in true }) -> float64 {
+public func Headless(s: schedule.Schedule, seconds: float64, dt: float32 = 1.0 / 60, each: (float64) -> bool = { _ in true }) -> float64 {
     let begun = time.Instant.Now()
     var t: float64 = 0
     while t < seconds {
@@ -224,7 +224,7 @@ public func Headless(_ s: schedule.Schedule, seconds: float64, dt: float32 = 1.0
     return begun.Elapsed().AsSeconds()
 }
 
-func ms(_ x: float64) -> string {
+func ms(x: float64) -> string {
     let t = Int((x * 100).rounded())
     return "\(t / 100).\(t % 100 < 10 ? "0" : "")\(t % 100)"
 }

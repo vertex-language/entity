@@ -42,7 +42,7 @@ public struct Entity: Equatable, Hashable {
 
 /// storage is what a world needs of every store: forgetting an entity.
 protocol storage: AnyObject {
-    func forget(_ e: Entity)
+    func forget(e: Entity)
     var name: string { get }
 }
 
@@ -73,7 +73,7 @@ public final class World {
 
     /// Despawn removes an entity and all its components, now. Inside a walk
     /// over a store, use Later.
-    public func Despawn(_ e: Entity) {
+    public func Despawn(e: Entity) {
         if !Alive(e) { return }
         for s in stores { s.forget(e) }
         let i = int(e.Index)
@@ -84,14 +84,14 @@ public final class World {
     }
 
     /// Alive is whether the entity exists (and isn't a stale handle).
-    public func Alive(_ e: Entity) -> bool {
+    public func Alive(e: Entity) -> bool {
         let i = int(e.Index)
         return i >= 0 && i < alive.count && alive[i] && generations[i] == e.Generation
     }
 
     /// Store is a store for one component type, made the first time and
     /// remembered by `name` (by default, the type's name).
-    public func Store<T>(_ type: T.Type, name: string = "") -> entity.Store<T> {
+    public func Store<T>(type: T.Type, name: string = "") -> entity.Store<T> {
         let key = name.isEmpty ? "\(T.self)" : name
         for s in stores where s.name == key {
             if let typed = s as? entity.Store<T> { return typed }
@@ -104,7 +104,7 @@ public final class World {
     /// Later runs f at the next Flush: a change that would disturb a walk
     /// in progress (spawning, despawning, adding a component to a store
     /// being walked).
-    public func Later(_ f: () -> void) {
+    public func Later(f: () -> void) {
         deferred.append(f)
     }
 
@@ -137,7 +137,7 @@ public final class Store<T>: storage {
     /// Sparse: by entity index, its slot in values, or -1.
     var slots: [int32] = []
 
-    init(_ name: string, world: World) {
+    init(name: string, world: World) {
         self.name = name
         self.world = world
     }
@@ -151,7 +151,7 @@ public final class Store<T>: storage {
     /// Entities is who has the component, in the order Each walks.
     public var Entities: [Entity] { return owners }
 
-    func slot(_ e: Entity) -> int {
+    func slot(e: Entity) -> int {
         let i = int(e.Index)
         if i < 0 || i >= slots.count { return -1 }
         let s = int(slots[i])
@@ -160,12 +160,12 @@ public final class Store<T>: storage {
     }
 
     /// Has is whether the entity has the component.
-    public func Has(_ e: Entity) -> bool {
+    public func Has(e: Entity) -> bool {
         return slot(e) >= 0
     }
 
     /// Get is an entity's component, or nil.
-    public func Get(_ e: Entity) -> T? {
+    public func Get(e: Entity) -> T? {
         let s = slot(e)
         return s >= 0 ? values[s] : nil
     }
@@ -173,12 +173,12 @@ public final class Store<T>: storage {
     /// The component of an entity: nil when it has none. Read only:
     /// Set and Remove change it (a settable subscript here doesn't lower
     /// yet, vsc_TODO #75).
-    public subscript(_ e: Entity) -> T? {
+    public subscript(e: Entity) -> T? {
         return Get(e)
     }
 
     /// Set gives an entity the component, or replaces the one it has.
-    public func Set(_ e: Entity, _ v: T) {
+    public func Set(e: Entity, v: T) {
         if !world.Alive(e) { return }
         let s = slot(e)
         if s >= 0 {
@@ -193,7 +193,7 @@ public final class Store<T>: storage {
     }
 
     /// Remove takes the component away (the last value moves into its slot).
-    public func Remove(_ e: Entity) {
+    public func Remove(e: Entity) {
         let s = slot(e)
         if s < 0 { return }
         let last = values.count - 1
@@ -207,13 +207,13 @@ public final class Store<T>: storage {
         slots[int(e.Index)] = -1
     }
 
-    func forget(_ e: Entity) {
+    func forget(e: Entity) {
         Remove(e)
     }
 
     /// Modify changes an entity's component in place; false when it has none.
     @discardableResult
-    public func Modify(_ e: Entity, _ f: (inout T) -> void) -> bool {
+    public func Modify(e: Entity, f: (inout T) -> void) -> bool {
         let s = slot(e)
         if s < 0 { return false }
         f(&values[s])
@@ -223,7 +223,7 @@ public final class Store<T>: storage {
     /// Each walks every entity with the component, the value changeable in
     /// place. Don't add or remove components of this store inside; use
     /// World.Later.
-    public func Each(_ f: (Entity, inout T) -> void) {
+    public func Each(f: (Entity, inout T) -> void) {
         var i = 0
         let n = values.count
         while i < n && i < values.count {
@@ -233,7 +233,7 @@ public final class Store<T>: storage {
     }
 
     /// At is the i-th value and its owner, in walking order.
-    public func At(_ i: int) -> (Entity, T) {
+    public func At(i: int) -> (Entity, T) {
         return (owners[i], values[i])
     }
 }
@@ -241,7 +241,7 @@ public final class Store<T>: storage {
 /// Join walks the entities that have both components, both changeable in
 /// place. It walks a and looks each up in b, so give the smaller store
 /// first.
-public func Join<A, B>(_ a: Store<A>, _ b: Store<B>, _ f: (Entity, inout A, inout B) -> void) {
+public func Join<A, B>(a: Store<A>, b: Store<B>, f: (Entity, inout A, inout B) -> void) {
     var i = 0
     while i < a.values.count {
         let e = a.owners[i]
@@ -252,7 +252,7 @@ public func Join<A, B>(_ a: Store<A>, _ b: Store<B>, _ f: (Entity, inout A, inou
 }
 
 /// Join3 walks the entities that have all three components.
-public func Join3<A, B, C>(_ a: Store<A>, _ b: Store<B>, _ c: Store<C>, _ f: (Entity, inout A, inout B, inout C) -> void) {
+public func Join3<A, B, C>(a: Store<A>, b: Store<B>, c: Store<C>, f: (Entity, inout A, inout B, inout C) -> void) {
     var i = 0
     while i < a.values.count {
         let e = a.owners[i]

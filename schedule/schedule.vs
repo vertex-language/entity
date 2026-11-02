@@ -44,7 +44,7 @@ public final class System {
     public private(set) var AverageMs: float64 = 0
     var frameMs: float64 = 0
 
-    init(_ name: string, _ stage: Stage, reads: [string], writes: [string], _ run: (float32) -> void) {
+    init(name: string, stage: Stage, reads: [string], writes: [string], run: (float32) -> void) {
         Name = name
         self.Stage = stage
         Reads = reads
@@ -79,20 +79,20 @@ public final class Schedule {
 
     /// Add appends a system to a stage.
     @discardableResult
-    public func Add(_ name: string, _ stage: Stage, reads: [string] = [], writes: [string] = [], _ run: (float32) -> void) -> System {
+    public func Add(name: string, stage: Stage, reads: [string] = [], writes: [string] = [], run: (float32) -> void) -> System {
         let s = System(name, stage, reads: reads, writes: writes, run)
         Systems.append(s)
         return s
     }
 
     /// Find is a system by name.
-    public func Find(_ name: string) -> System? {
+    public func Find(name: string) -> System? {
         return Systems.first(where: { $0.Name == name })
     }
 
     /// Run runs one frame of dt seconds: input, the fixed steps it owes,
     /// frame, late.
-    public func Run(_ dt: float32) {
+    public func Run(dt: float32) {
         for s in Systems { s.frameMs = 0 }
         stage(.input, dt)
         accumulator += min(dt, Step * float32(MaxSteps))
@@ -117,7 +117,7 @@ public final class Schedule {
 
     /// Steps runs only the fixed stage, n times: a headless simulation, a
     /// test.
-    public func RunSteps(_ n: int) {
+    public func RunSteps(n: int) {
         for _ in 0..<n {
             for s in Systems { s.frameMs = 0 }
             stage(.fixed, Step)
@@ -130,7 +130,7 @@ public final class Schedule {
         }
     }
 
-    func stage(_ st: Stage, _ dt: float32) {
+    func stage(st: Stage, dt: float32) {
         for s in Systems where s.Stage == st && s.Enabled {
             let t0 = time.Instant.Now()
             s.run(dt)
@@ -149,7 +149,7 @@ public final class Schedule {
     }
 }
 
-func fmt(_ ms: float64) -> string {
+func fmt(ms: float64) -> string {
     let t = Int((ms * 100).rounded())
     return "\(t / 100).\(t % 100 < 10 ? "0" : "")\(t % 100)"
 }
